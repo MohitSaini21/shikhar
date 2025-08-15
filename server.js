@@ -1252,13 +1252,13 @@ io.on("connection", (socket) => {
 const startServer = async () => {
   try {
     await ConnectDB(
-      "mongodb+srv://educole:educole1234@educole.2cvrvth.mongodb.net/educoleDB?retryWrites=true&w=majority&appName=Educole"
+      "mongodb+srv://educole:educole1234@educole.2cvrvth.mongodb.net/shikharDB?retryWrites=true&w=majority&appName=Educole"
     );
     const existingAdministrator = await CORE.findOne({ role: "administrator" });
     if (!existingAdministrator) {
       await CORE.create({
-        username: "educole",
-        password: "educole123", // you should hash this in real-world apps!
+        username: "shikhar",
+        password: "shikhar123", // you should hash this in real-world apps!
         role: "administrator",
 
         administratorId: "ADMTR-1234",
