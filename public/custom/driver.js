@@ -1104,7 +1104,7 @@ setInterval(() => {
     distanceCovered = 0;
   }
 }, 30 * 1000);
-
+  y 
 window.addEventListener("offline", () => {
   console.warn("📴 Offline — disconnecting socket");
   window.location.href = "/DC";
