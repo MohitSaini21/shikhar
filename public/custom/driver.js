@@ -7,13 +7,14 @@ let distanceCovered = 0;
 window._wasManuallyRejected = false;
 
 let peerConnection = null;
+const lastNotification = null;
 
 let reconnectTimeout;
 let recorder = null;
 let chunks = [];
 let isSharing = false;
 
-const RADIUS_METERS = 300;
+const RADIUS_METERS = 1000;
 let mediaStream = null;
 let isShowingRoute = false; // Track current state
 
@@ -1035,14 +1036,15 @@ const speedLogs = [];
 function DistanceCover(lat, lng, accuracy) {
   const currentPoint = { latitude: lat, longitude: lng };
 
-  // Skip until we have a previous point to compare
+  // ✅ Skip until we have a previous point to compare
   if (!disPrev) {
     disPrev = currentPoint;
+    lastDistanceTimeStamp = Date.now(); // initialize timestamp
     return;
   }
 
-  // Only proceed if GPS accuracy is reliable
-  if (accuracy < 15) {
+  // ✅ Only proceed if GPS accuracy is reliable
+  if (accuracy < 50) {
     const newDistance = getDistance({
       lat1: disPrev.latitude,
       lon1: disPrev.longitude,
@@ -1055,30 +1057,38 @@ function DistanceCover(lat, lng, accuracy) {
 
     const now = Date.now();
 
-    // Only calculate speed if we have a previous timestamp
+    // ✅ Only calculate speed if we have a previous timestamp
     if (lastDistanceTimeStamp) {
-      const timeElapsed = now - lastDistanceTimeStamp; // in ms
-      const hoursElapsed = timeElapsed / (1000 * 60 * 60); // ms to hours
-      if (newDistance === 0 || hoursElapsed === 0) return;
-      const speed = newDistance / 1000 / hoursElapsed; // km/h
+      const timeElapsed = now - lastDistanceTimeStamp; // ms
+      const hoursElapsed = timeElapsed / (1000 * 60 * 60); // ms → hours
 
-      // Safety filter: ignore unrealistic spikes (e.g. GPS glitch)
-      if (speed <= 150) {
-        speedLogs.push({ time: now, speed });
+      if (newDistance > 0 && hoursElapsed > 0) {
+        const speed = newDistance / 1000 / hoursElapsed; // km/h
 
-        if (speed > 50) {
-          let message = `🚨 Over-speeding Alert from ${
-            bus.busNumber
-          }: ${speed.toFixed(2)} km/h`;
-          console.log(message);
-          if (socket && socket.connected) {
-            socket.emit("overSpeedAlert", { busId: bus._id, message });
+        // ✅ Safety filter: ignore unrealistic spikes (GPS glitch)
+        if (speed <= 150) {
+          speedLogs.push({ time: now, speed });
+
+          if (speed > 70) {
+            const message = `🚨 Over-speeding Alert from ${
+              bus.busNumber
+            }: ${speed.toFixed(2)} km/h`;
+
+            if (socket && socket.connected) {
+              if (!lastNotification) {
+                lastNotification = now;
+                socket.emit("overSpeedAlert", { busId: bus._id, message });
+              } else if (now - lastNotification > 60 * 1000) {
+                lastNotification = now; // reset timer
+                socket.emit("overSpeedAlert", { busId: bus._id, message });
+              }
+            }
+          } else {
+            console.log(`✅ Speed: ${speed.toFixed(2)} km/h`);
           }
         } else {
-          console.log(`✅ Speed: ${speed.toFixed(2)} km/h`);
+          console.warn("⚠️ Ignored faulty speed spike due to GPS anomaly.");
         }
-      } else {
-        console.warn("⚠️ Ignored faulty speed spike due to GPS anomaly.");
       }
     }
 

@@ -288,18 +288,19 @@ router.get(
 
       const campuses = [
         {
-          name: "Educole HeadCampus",
+          name: "Shikhar HeadCampus",
           polygon: turf.polygon([
             [
-              [78.4915699, 29.3338713],
-              [78.4920634, 29.3330669],
-              [78.4928305, 29.3334738],
-              [78.4922565, 29.3342548],
-              [78.4915699, 29.3338713],
+              [78.49154830357867, 29.309919412347156], // Point 1
+              [78.49237301287035, 29.309594924654018], // Point 2
+              [78.49054256054002, 29.307875999666557], // Point 3
+              [78.49101525976747, 29.307604126216827], // Point 4
+              [78.49154830357867, 29.309919412347156], // Closing point (same as Point 1)
             ],
           ]),
         },
       ];
+
       return res.render("DC/goLive.ejs", { user: req.worker, bus, campuses });
     } catch (err) {
       console.error("❌ Error fetching bus:", err);
